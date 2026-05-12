@@ -551,6 +551,6 @@ with animation_container:
 # =========================================================
 if st.session_state.running:
 
-    time.sleep(0.02)
+    time.sleep(0.03)
 
     st.rerun()
