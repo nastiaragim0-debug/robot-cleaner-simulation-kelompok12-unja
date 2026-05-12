@@ -1,5 +1,5 @@
 # =========================================================
-# SIMULASI ROBOT PEMBERSIH RUANGAN - STABLE VERSION
+# SIMULASI ROBOT PEMBERSIH RUANGAN - FINAL STABLE VERSION
 # =========================================================
 
 import streamlit as st
@@ -26,7 +26,9 @@ CLEAN_RADIUS = 0.7
 
 TRAIL_MAXLEN = 200
 
-# warna
+# =========================================================
+# WARNA
+# =========================================================
 COLOR_FLOOR_DIRTY = "#1a1a2e"
 COLOR_FLOOR_CLEAN = "#1e5f74"
 COLOR_OBSTACLE_BG = "#533483"
@@ -542,4 +544,4 @@ if st.session_state.running:
 
     time.sleep(0.08)
 
-    st.experimental_rerun()
+    st.rerun()
