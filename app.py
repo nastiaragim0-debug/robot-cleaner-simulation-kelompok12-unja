@@ -1,5 +1,5 @@
 # =========================================================
-# SIMULASI ROBOT PEMBERSIH RUANGAN - FINAL STABLE VERSION
+# SIMULASI ROBOT PEMBERSIH RUANGAN - STABLE NO FLICKER
 # =========================================================
 
 import streamlit as st
@@ -317,7 +317,8 @@ class RoomCleaningSimulation:
 
     def update(self):
 
-        self.robot.step(self.clean_grid)
+        for _ in range(3):
+            self.robot.step(self.clean_grid)
 
     def draw(self):
 
@@ -525,23 +526,23 @@ else:
     st.warning("⏸ Robot Pause")
 
 # =========================================================
-# TAMPILKAN SIMULASI
+# PLACEHOLDER GAMBAR
 # =========================================================
+plot_placeholder = st.empty()
+
 fig = sim.draw()
 
-st.pyplot(
+plot_placeholder.pyplot(
     fig,
-    clear_figure=True,
+    clear_figure=False,
     use_container_width=True
 )
 
 plt.close(fig)
 
 # =========================================================
-# REFRESH STABIL
+# LOOP HALUS TANPA KEDIP PARAH
 # =========================================================
 if st.session_state.running:
 
-    time.sleep(0.08)
-
-    st.rerun()
+    time.sleep(0.03)
