@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.colors import ListedColormap
 import matplotlib.patheffects as pe
-from streamlit_autorefresh import st_autorefresh
 
 # =========================================================
 # KONFIGURASI
@@ -539,11 +538,12 @@ st.pyplot(
 plt.close(fig)
 
 # =========================================================
-# AUTO REFRESH STABIL
+# REFRESH HALUS
 # =========================================================
 if st.session_state.running:
 
-    st_autorefresh(
-        interval=20,
-        key="robot_refresh"
-    )
+    import time
+
+    time.sleep(0.03)
+
+    st.rerun()
