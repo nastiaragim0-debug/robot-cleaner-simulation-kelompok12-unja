@@ -311,8 +311,7 @@ class RoomCleaningSimulation:
 
     def update(self):
 
-        for _ in range(6):
-            self.robot.step(self.clean_grid)
+        self.robot.step(self.clean_grid)
 
     def draw(self):
 
@@ -552,6 +551,6 @@ with animation_container:
 # =========================================================
 if st.session_state.running:
 
-    time.sleep(0.05)
+    time.sleep(0.02)
 
     st.rerun()
