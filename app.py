@@ -316,10 +316,7 @@ class RoomCleaningSimulation:
 
     def draw(self):
 
-        fig, ax = plt.subplots(
-            figsize=(10, 6),
-            dpi=85
-        )
+        fig, ax = plt.subplots(figsize=(10, 6), dpi=85)
 
         fig.patch.set_facecolor(COLOR_BG)
 
@@ -338,8 +335,7 @@ class RoomCleaningSimulation:
             cmap=cmap_clean,
             vmin=0,
             vmax=2,
-            interpolation='nearest',
-            alpha=1.0
+            interpolation='nearest'
         )
 
         # obstacle
@@ -372,7 +368,7 @@ class RoomCleaningSimulation:
                 ]
             )
 
-        # trail robot
+        # trail
         ax.plot(
             self.robot.trail_x,
             self.robot.trail_y,
@@ -489,7 +485,7 @@ plot_placeholder = st.empty()
 status_placeholder = st.empty()
 
 # =========================================================
-# HITUNG PERSENTASE
+# UPDATE REALTIME
 # =========================================================
 cleaned = int(np.sum(sim.clean_grid == 1))
 
@@ -498,14 +494,10 @@ pct = (
     max(sim.total_cleanable, 1)
 ) * 100
 
-# =========================================================
-# PROGRESS BAR
-# =========================================================
+# progress
 progress_placeholder.progress(min(int(pct), 100))
 
-# =========================================================
-# METRIC
-# =========================================================
+# metrics
 col1, col2, col3 = metric_placeholder.columns(3)
 
 col1.metric(
@@ -523,16 +515,20 @@ col3.metric(
     f"({sim.robot.x:.2f}, {sim.robot.y:.2f})"
 )
 
-# =========================================================
-# STATUS
-# =========================================================
+# status
 if st.session_state.running:
     status_placeholder.success("🟢 Robot Sedang Membersihkan")
 else:
     status_placeholder.warning("⏸ Robot Pause")
 
 # =========================================================
-# TAMPILKAN PLOT
+# UPDATE ROBOT
+# =========================================================
+if st.session_state.running:
+    sim.update()
+
+# =========================================================
+# TAMPILKAN GAMBAR
 # =========================================================
 fig = sim.draw()
 
@@ -545,57 +541,10 @@ plot_placeholder.pyplot(
 plt.close(fig)
 
 # =========================================================
-# LOOP ANIMASI
+# REFRESH HALUS
 # =========================================================
 if st.session_state.running:
 
-    while st.session_state.running:
+    time.sleep(0.04)
 
-        # update robot
-        sim.update()
-
-        # hitung progress
-        cleaned = int(np.sum(sim.clean_grid == 1))
-
-        pct = (
-            cleaned /
-            max(sim.total_cleanable, 1)
-        ) * 100
-
-        # update progress bar
-        progress_placeholder.progress(min(int(pct), 100))
-
-        # update metric
-        col1, col2, col3 = metric_placeholder.columns(3)
-
-        col1.metric(
-            "Persentase Bersih",
-            f"{pct:.1f}%"
-        )
-
-        col2.metric(
-            "Langkah Robot",
-            f"{sim.robot.step_count}"
-        )
-
-        col3.metric(
-            "Posisi Robot",
-            f"({sim.robot.x:.2f}, {sim.robot.y:.2f})"
-        )
-
-        # gambar baru
-        fig = sim.draw()
-
-        plot_placeholder.pyplot(
-            fig,
-            clear_figure=True,
-            use_container_width=True
-        )
-
-        plt.close(fig)
-
-        time.sleep(0.03)
-
-        # stop jika pause ditekan
-        if not st.session_state.running:
-            break
+    st.rerun()
