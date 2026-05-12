@@ -522,6 +522,11 @@ else:
     status_placeholder.warning("⏸ Robot Pause")
 
 # =========================================================
+# CONTAINER ANIMASI
+# =========================================================
+animation_container = st.container()
+
+# =========================================================
 # UPDATE ROBOT
 # =========================================================
 if st.session_state.running:
@@ -530,21 +535,23 @@ if st.session_state.running:
 # =========================================================
 # TAMPILKAN GAMBAR
 # =========================================================
-fig = sim.draw()
+with animation_container:
 
-plot_placeholder.pyplot(
-    fig,
-    clear_figure=True,
-    use_container_width=True
-)
+    fig = sim.draw()
 
-plt.close(fig)
+    st.pyplot(
+        fig,
+        clear_figure=True,
+        use_container_width=True
+    )
+
+    plt.close(fig)
 
 # =========================================================
 # REFRESH HALUS
 # =========================================================
 if st.session_state.running:
 
-    time.sleep(0.04)
+    time.sleep(0.05)
 
     st.rerun()
