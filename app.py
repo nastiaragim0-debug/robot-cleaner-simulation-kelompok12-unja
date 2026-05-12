@@ -1,5 +1,5 @@
 # =========================================================
-# SIMULASI ROBOT PEMBERSIH RUANGAN - STREAMLIT VERSION
+# SIMULASI ROBOT PEMBERSIH RUANGAN - PERFECT STABLE VERSION
 # =========================================================
 
 import streamlit as st
@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from matplotlib.colors import ListedColormap
 import matplotlib.patheffects as pe
-import time
+from streamlit_autorefresh import st_autorefresh
 
 # =========================================================
 # KONFIGURASI
@@ -19,20 +19,24 @@ ROOM_HEIGHT = 15
 GRID_RES = 0.25
 
 ROBOT_RADIUS = 0.5
-ROBOT_SPEED = 0.18
+ROBOT_SPEED = 0.10
 
 SENSOR_RANGE = 1.8
 CLEAN_RADIUS = 0.7
 
-TRAIL_MAXLEN = 180
+TRAIL_MAXLEN = 250
 
 # warna
 COLOR_FLOOR_DIRTY = "#1a1a2e"
+COLOR_FLOOR_CLEAN = "#1e5f74"
 COLOR_OBSTACLE_BG = "#533483"
+
 COLOR_ROBOT = "#e94560"
 COLOR_ROBOT_GLOW = "#ff6b6b"
+
 COLOR_TRAIL = "#4ecdc4"
 COLOR_SENSOR = "#f7d794"
+
 COLOR_BG = "#0d0d1a"
 
 # =========================================================
@@ -172,7 +176,7 @@ class CleaningRobot:
         total_x = move_x + avoid_x * 0.8 + wall_x
         total_y = move_y + avoid_y * 0.8 + wall_y
 
-        noise = 0.12
+        noise = 0.08
 
         total_x += np.random.uniform(-noise, noise)
         total_y += np.random.uniform(-noise, noise)
@@ -315,7 +319,10 @@ class RoomCleaningSimulation:
 
     def draw(self):
 
-        fig, ax = plt.subplots(figsize=(10, 6), dpi=85)
+        fig, ax = plt.subplots(
+            figsize=(10, 6),
+            dpi=100
+        )
 
         fig.patch.set_facecolor(COLOR_BG)
 
@@ -323,7 +330,7 @@ class RoomCleaningSimulation:
 
         cmap_clean = ListedColormap([
             COLOR_FLOOR_DIRTY,
-            "#1e5f74",
+            COLOR_FLOOR_CLEAN,
             COLOR_OBSTACLE_BG,
         ])
 
@@ -372,7 +379,7 @@ class RoomCleaningSimulation:
             self.robot.trail_x,
             self.robot.trail_y,
             color=COLOR_TRAIL,
-            linewidth=1,
+            linewidth=1.5,
             alpha=0.6
         )
 
@@ -382,7 +389,7 @@ class RoomCleaningSimulation:
             SENSOR_RANGE,
             fill=False,
             linestyle='--',
-            linewidth=0.8,
+            linewidth=1,
             color=COLOR_SENSOR,
             alpha=0.3
         )
@@ -458,7 +465,7 @@ if "running" not in st.session_state:
 sim = st.session_state.sim
 
 # =========================================================
-# SIDEBAR CONTROL
+# SIDEBAR
 # =========================================================
 st.sidebar.title("🎮 Kontrol")
 
@@ -476,15 +483,13 @@ if st.sidebar.button("↺ RESET"):
     sim = st.session_state.sim
 
 # =========================================================
-# PLACEHOLDER
+# UPDATE ROBOT
 # =========================================================
-progress_placeholder = st.empty()
-metric_placeholder = st.empty()
-plot_placeholder = st.empty()
-status_placeholder = st.empty()
+if st.session_state.running:
+    sim.update()
 
 # =========================================================
-# UPDATE REALTIME
+# HITUNG PROGRESS
 # =========================================================
 cleaned = int(np.sum(sim.clean_grid == 1))
 
@@ -493,11 +498,12 @@ pct = (
     max(sim.total_cleanable, 1)
 ) * 100
 
-# progress
-progress_placeholder.progress(min(int(pct), 100))
+# =========================================================
+# UI
+# =========================================================
+st.progress(min(int(pct), 100))
 
-# metrics
-col1, col2, col3 = metric_placeholder.columns(3)
+col1, col2, col3 = st.columns(3)
 
 col1.metric(
     "Persentase Bersih",
@@ -514,43 +520,30 @@ col3.metric(
     f"({sim.robot.x:.2f}, {sim.robot.y:.2f})"
 )
 
-# status
 if st.session_state.running:
-    status_placeholder.success("🟢 Robot Sedang Membersihkan")
+    st.success("🟢 Robot Sedang Membersihkan")
 else:
-    status_placeholder.warning("⏸ Robot Pause")
+    st.warning("⏸ Robot Pause")
 
 # =========================================================
-# CONTAINER ANIMASI
+# GAMBAR
 # =========================================================
-animation_container = st.container()
+fig = sim.draw()
+
+st.pyplot(
+    fig,
+    clear_figure=True,
+    use_container_width=True
+)
+
+plt.close(fig)
 
 # =========================================================
-# UPDATE ROBOT
+# AUTO REFRESH STABIL
 # =========================================================
 if st.session_state.running:
-    sim.update()
 
-# =========================================================
-# TAMPILKAN GAMBAR
-# =========================================================
-with animation_container:
-
-    fig = sim.draw()
-
-    st.pyplot(
-        fig,
-        clear_figure=True,
-        use_container_width=True
+    st_autorefresh(
+        interval=20,
+        key="robot_refresh"
     )
-
-    plt.close(fig)
-
-# =========================================================
-# REFRESH HALUS
-# =========================================================
-if st.session_state.running:
-
-    time.sleep(0.02)
-
-    st.rerun()
