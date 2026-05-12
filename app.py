@@ -549,8 +549,53 @@ plt.close(fig)
 # =========================================================
 if st.session_state.running:
 
-    time.sleep(0.03)
+    while st.session_state.running:
 
-    sim.update()
+        # update robot
+        sim.update()
 
-    st.rerun()
+        # hitung progress
+        cleaned = int(np.sum(sim.clean_grid == 1))
+
+        pct = (
+            cleaned /
+            max(sim.total_cleanable, 1)
+        ) * 100
+
+        # update progress bar
+        progress_placeholder.progress(min(int(pct), 100))
+
+        # update metric
+        col1, col2, col3 = metric_placeholder.columns(3)
+
+        col1.metric(
+            "Persentase Bersih",
+            f"{pct:.1f}%"
+        )
+
+        col2.metric(
+            "Langkah Robot",
+            f"{sim.robot.step_count}"
+        )
+
+        col3.metric(
+            "Posisi Robot",
+            f"({sim.robot.x:.2f}, {sim.robot.y:.2f})"
+        )
+
+        # gambar baru
+        fig = sim.draw()
+
+        plot_placeholder.pyplot(
+            fig,
+            clear_figure=True,
+            use_container_width=True
+        )
+
+        plt.close(fig)
+
+        time.sleep(0.03)
+
+        # stop jika pause ditekan
+        if not st.session_state.running:
+            break
