@@ -1,21 +1,6 @@
 # =========================================================
 # SIMULASI ROBOT PEMBERSIH RUANGAN - STREAMLIT VERSION
 # =========================================================
-# Teknologi:
-# - Python
-# - Streamlit
-# - Matplotlib
-# - NumPy
-#
-# Fitur:
-# - Robot bergerak otomatis
-# - Obstacle avoidance
-# - Persentase kebersihan realtime
-# - Posisi robot realtime
-# - Langkah robot realtime
-# - Tombol Start / Pause / Reset
-# - FPS lebih smooth
-# =========================================================
 
 import streamlit as st
 import numpy as np
@@ -466,7 +451,9 @@ st.set_page_config(
 
 st.title("🤖 Simulasi Robot Pembersih Ruangan")
 
-# session state
+# =========================================================
+# SESSION STATE
+# =========================================================
 if "sim" not in st.session_state:
     st.session_state.sim = RoomCleaningSimulation()
 
@@ -494,18 +481,15 @@ if st.sidebar.button("↺ RESET"):
     sim = st.session_state.sim
 
 # =========================================================
-# REALTIME PLACEHOLDER
+# PLACEHOLDER
 # =========================================================
 progress_placeholder = st.empty()
-
 metric_placeholder = st.empty()
-
 plot_placeholder = st.empty()
-
 status_placeholder = st.empty()
 
 # =========================================================
-# UPDATE REALTIME
+# HITUNG PERSENTASE
 # =========================================================
 cleaned = int(np.sum(sim.clean_grid == 1))
 
@@ -514,8 +498,14 @@ pct = (
     max(sim.total_cleanable, 1)
 ) * 100
 
+# =========================================================
+# PROGRESS BAR
+# =========================================================
 progress_placeholder.progress(min(int(pct), 100))
 
+# =========================================================
+# METRIC
+# =========================================================
 col1, col2, col3 = metric_placeholder.columns(3)
 
 col1.metric(
@@ -533,41 +523,34 @@ col3.metric(
     f"({sim.robot.x:.2f}, {sim.robot.y:.2f})"
 )
 
-# status
+# =========================================================
+# STATUS
+# =========================================================
 if st.session_state.running:
     status_placeholder.success("🟢 Robot Sedang Membersihkan")
 else:
     status_placeholder.warning("⏸ Robot Pause")
 
 # =========================================================
+# TAMPILKAN PLOT
+# =========================================================
+fig = sim.draw()
+
+plot_placeholder.pyplot(
+    fig,
+    clear_figure=True,
+    use_container_width=True
+)
+
+plt.close(fig)
+
+# =========================================================
 # LOOP ANIMASI
 # =========================================================
 if st.session_state.running:
 
+    time.sleep(0.03)
+
     sim.update()
 
-    fig = sim.draw()
-
-    plot_placeholder.pyplot(
-        fig,
-        clear_figure=True,
-        use_container_width=True
-    )
-
-    plt.close(fig)
-
-    time.sleep(0.001)
-
     st.rerun()
-
-else:
-
-    fig = sim.draw()
-
-    plot_placeholder.pyplot(
-        fig,
-        clear_figure=True,
-        use_container_width=True
-    )
-
-    plt.close(fig)
