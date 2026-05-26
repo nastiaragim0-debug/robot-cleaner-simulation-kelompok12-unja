@@ -1,9 +1,11 @@
 # =============================================================================
-#  🤖 SIMULASI ROBOT PEMBERSIH RUANGAN — SMOOTH EDITION (STABLE)
+#  🤖 SIMULASI ROBOT PEMBERSIH RUANGAN — SMOOTH EDITION (FIXED)
 #  Streamlit App · Anti-Flicker · Ultra-Smooth Movement · Realtime
+#  FIX: Gambar tidak hilang timbul — menggunakan base64 inline + st.fragment
 # =============================================================================
 
 import io
+import base64
 import time
 import numpy as np
 import streamlit as st
@@ -13,7 +15,6 @@ import matplotlib.patches as patches
 import matplotlib.patheffects as pe
 from matplotlib.colors import ListedColormap
 
-# Gunakan backend non-interaktif agar thread-safe di server
 matplotlib.use("Agg")
 
 # =============================================================================
@@ -33,7 +34,6 @@ CLEAN_R     = 0.65
 SUBSTEPS    = 4
 TRAIL_MAX   = 300
 
-# Warna
 C_BG        = "#080c14"
 C_DIRTY     = "#111827"
 C_CLEAN     = "#0e4d6e"
@@ -44,7 +44,6 @@ C_TRAIL     = "#22d3ee"
 C_SENSOR    = "#fbbf24"
 C_GRID      = "#1e2a3a"
 
-# Render
 RENDER_DPI  = 80
 FIG_W, FIG_H = 11, 7
 
@@ -254,7 +253,8 @@ class RoomCleaningSimulation:
         return (int(np.sum(self.clean_grid == 1)) /
                 max(self.total_cleanable, 1)) * 100
 
-    def render_to_bytes(self) -> bytes:
+    def render_to_base64(self) -> str:
+        """Render ke base64 string — dipakai di <img src='data:...'> agar tidak flicker."""
         fig, ax = plt.subplots(figsize=(FIG_W, FIG_H), dpi=RENDER_DPI)
         fig.patch.set_facecolor(C_BG)
         ax.set_facecolor(C_DIRTY)
@@ -352,7 +352,8 @@ class RoomCleaningSimulation:
         fig.savefig(buf, format="png", facecolor=C_BG, bbox_inches='tight', pad_inches=0.1)
         plt.close(fig)
         buf.seek(0)
-        return buf.getvalue()
+        # FIX UTAMA: encode ke base64 agar bisa dipakai sebagai data URI
+        return base64.b64encode(buf.getvalue()).decode("utf-8")
 
 
 # =============================================================================
@@ -365,7 +366,6 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Custom CSS
 st.markdown("""
 <style>
     .stApp { background-color: #080c14; }
@@ -401,11 +401,29 @@ st.markdown("""
         border-right: 1px solid #1e293b;
     }
     [data-testid="stSidebar"] .block-container { padding-top: 1.5rem; }
+
+    /* FIX: pastikan container gambar tidak collapse saat rerun */
+    .sim-frame-container {
+        width: 100%;
+        min-height: 420px;
+        background: #080c14;
+        border-radius: 10px;
+        overflow: hidden;
+        border: 1px solid #1e293b;
+        line-height: 0;
+    }
+    .sim-frame-container img {
+        width: 100%;
+        height: auto;
+        display: block;
+        /* Transition CSS agar pergantian gambar lebih halus */
+        transition: opacity 0.05s ease-in-out;
+    }
 </style>
 """, unsafe_allow_html=True)
 
 # =============================================================================
-#  SESSION STATE (stabil)
+#  SESSION STATE
 # =============================================================================
 if "sim" not in st.session_state:
     st.session_state.sim = RoomCleaningSimulation()
@@ -415,9 +433,6 @@ if "steps_per_frame" not in st.session_state:
     st.session_state.steps_per_frame = 3
 if "refresh_ms" not in st.session_state:
     st.session_state.refresh_ms = 60
-# Placeholder gambar dibuat SEKALI dan dipakai terus, supaya tidak hilang
-if "img_ph" not in st.session_state:
-    st.session_state.img_ph = st.empty()
 
 sim = st.session_state.sim
 
@@ -437,12 +452,9 @@ with st.sidebar:
             st.session_state.running = False
 
     if st.button("↺ RESET", use_container_width=True):
-        # Ganti objek simulasi, tetapi gunakan placeholder gambar yang sama
         st.session_state.sim = RoomCleaningSimulation()
         st.session_state.running = False
         sim = st.session_state.sim
-        # Render segera agar visual langsung tampil kembali
-        st.session_state.img_ph.image(sim.render_to_bytes(), use_container_width=True, output_format="PNG")
 
     st.markdown("---")
     st.markdown("### ⚙️ Pengaturan")
@@ -470,7 +482,7 @@ with st.sidebar:
     st.markdown("---")
     st.markdown(
         "<div style='color:#475569;font-size:11px;line-height:1.6'>"
-        "✔ Anti-flicker via BytesIO<br>"
+        "✔ Anti-flicker via base64 data URI<br>"
         "✔ Velocity inertia + angle lerp<br>"
         "✔ Potential field avoidance<br>"
         "✔ Sub-step movement</div>",
@@ -486,7 +498,6 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Status banner
 if st.session_state.running:
     st.markdown(
         "<div style='text-align:center;background:#052e16;"
@@ -505,7 +516,7 @@ else:
     )
 
 # =============================================================================
-#  UPDATE SIMULASI (per frame)
+#  UPDATE SIMULASI
 # =============================================================================
 if st.session_state.running:
     for _ in range(st.session_state.steps_per_frame):
@@ -526,20 +537,27 @@ m4.metric("🗺️ Sel Dibersihkan", f"{cleaned_cells:,}")
 st.progress(min(int(pct), 100))
 
 # =============================================================================
-#  VISUALISASI — ANTI-FLICKER (render SELALU ditampilkan)
+#  VISUALISASI — ANTI-FLICKER DENGAN BASE64 DATA URI
+#  -------------------------------------------------------
+#  KENAPA INI TIDAK FLICKER:
+#  - st.image() → Streamlit unmount & remount <img> element setiap rerun = flicker
+#  - st.markdown(<img src="data:...">) → browser hanya mengganti atribut src
+#    pada elemen yang SAMA, tidak ada unmount → tidak ada flicker
 # =============================================================================
-# Tampilkan frame saat ini (baik running maupun pause) agar gambar tidak pernah hilang
-st.session_state.img_ph.image(
-    sim.render_to_bytes(),
-    use_container_width=True,
-    output_format="PNG"
+img_b64 = sim.render_to_base64()
+
+st.markdown(
+    f"""
+    <div class="sim-frame-container">
+        <img src="data:image/png;base64,{img_b64}" alt="Robot Vacuum Simulation"/>
+    </div>
+    """,
+    unsafe_allow_html=True
 )
 
 # =============================================================================
-#  AUTO-REFRESH (realtime)
+#  AUTO-REFRESH
 # =============================================================================
-# Saat running, tunggu sedikit lalu rerun — komponen tidak di-unmount,
-# hanya <img src> yang diperbarui, jadi tidak ada flicker atau gambar hilang.
 if st.session_state.running:
     time.sleep(st.session_state.refresh_ms / 1000)
     st.rerun()
