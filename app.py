@@ -24,7 +24,7 @@ ROOM_W, ROOM_H = 20, 15
 GRID_RES       = 0.25
 ROBOT_R        = 0.45
 CLEAN_R        = 0.65
-SENSOR_R       = 1.8
+SENSOR_R       = 1.3
 ROBOT_SPEED    = 0.13
 ACCEL          = 0.11
 ANGLE_LRP      = 0.11
@@ -362,13 +362,13 @@ class RoomCleaningSimulation:
 
     def _create_obstacles(self):
         return [
-            Obstacle(3.5,  5.0,  3.5, 2.2, "Meja Kerja",  "#e94560"),
-            Obstacle(13.0, 10.5, 4.5, 2.8, "Sofa",        "#7c3aed"),
-            Obstacle(0.3,  11.5, 2.5, 3.2, "Lemari",      "#1d4ed8"),
-            Obstacle(14.5, 5.5,  2.2, 2.2, "Kursi",       "#d97706"),
-            Obstacle(10.5, 1.0,  3.0, 2.0, "Meja Kecil",  "#059669"),
-            Obstacle(17.5, 1.0,  2.2, 5.5, "Rak Buku",    "#7c3aed"),
-            Obstacle(8.5,  6.5,  1.5, 1.5, "Tanaman",     "#10b981"),
+        Obstacle(3.5,  5.0,  3.5, 2.2, "Meja Kerja",  "#e94560"),
+        Obstacle(13.0, 10.5, 4.5, 2.8, "Sofa",        "#7c3aed"),
+        Obstacle(0.3,  11.5, 2.5, 3.2, "Lemari",      "#1d4ed8"),
+        Obstacle(14.5, 5.5,  2.2, 2.2, "Kursi",       "#d97706"),
+        Obstacle(10.5, 2.0,  3.0, 1.0, "Meja Kecil",  "#059669"),
+        Obstacle(17.5, 1.0,  2.2, 5.5, "Rak Buku",    "#7c3aed"),
+        Obstacle(8.5,  6.5,  1.5, 1.5, "Tanaman",     "#10b981"),
         ]
 
     def _mark_obstacle_cells(self):
@@ -619,7 +619,7 @@ with st.sidebar:
 
 # HEADER
 st.markdown("<h1 style='text-align:center;font-family:monospace'>"
-            "🤖 AI Robot Vacuum Cleaner Simulation</h1>", unsafe_allow_html=True)
+            " AI Robot Vacuum Cleaner Simulation</h1>", unsafe_allow_html=True)
 
 phase_map = {
     "sweep":  ("🟢 Fase 1 — Menyapu Baris Sistematis",  "#052e16","#16a34a","#4ade80"),
